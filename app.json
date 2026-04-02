@@ -2,6 +2,7 @@
   "expo": {
     "name": "AI ProfilePicture",
     "slug": "ai-profilepicture",
+    "scheme": "aiprofilepicture",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

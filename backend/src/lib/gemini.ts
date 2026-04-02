@@ -17,10 +17,14 @@ type GeminiInlineDataPart = {
 
 type GeminiResponse = {
   candidates?: Array<{
+    finishReason?: string;
     content?: {
       parts?: GeminiInlineDataPart[];
     };
   }>;
+  promptFeedback?: {
+    blockReason?: string;
+  };
 };
 
 function stripDataUrlPrefix(value: string) {
@@ -62,7 +66,7 @@ export async function generatePortraitWithGemini({ imageBase64, style, apiKey, m
         },
       ],
       generationConfig: {
-        responseModalities: ['TEXT', 'IMAGE'],
+        responseModalities: ['IMAGE'],
       },
     }),
   });
@@ -77,7 +81,19 @@ export async function generatePortraitWithGemini({ imageBase64, style, apiKey, m
   const imagePart = parts.find((part) => part.inlineData?.data);
 
   if (!imagePart?.inlineData?.data) {
-    throw new Error('Gemini response did not include an image payload');
+    console.error('Gemini raw response:', JSON.stringify(data, null, 2));
+
+    const textParts = parts
+      .map((part) => part.text)
+      .filter((value): value is string => Boolean(value))
+      .join('\n');
+
+    const finishReasons = data.candidates?.map((candidate) => candidate.finishReason).filter(Boolean).join(', ');
+    const blockReason = data.promptFeedback?.blockReason;
+
+    throw new Error(
+      `Gemini response did not include an image payload. blockReason=${blockReason ?? 'none'} finishReasons=${finishReasons ?? 'none'} text=${textParts || 'none'}`,
+    );
   }
 
   return {
